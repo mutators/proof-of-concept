@@ -1,0 +1,46 @@
+name: 1. Hello, World!
+
+env:
+    FILE_PATH: out/1_hello-world/hello-world.txt
+    FILE_CONTENTS: |
+      Hello, World!
+
+      This file was last changed on $(date '+%A, %d %B %Y at %H:%M:%S').
+
+    GIT_USER_NAME: "GitHub Action"
+    GIT_USER_EMAIL: "action@github.com"
+
+on: [push]
+
+jobs:
+    create-hello-world-file:
+        name: Create `out/1_hello-world/hello-world.txt`
+        runs-on: ubuntu-20.04
+        steps:
+            - name: Checkout git repository
+              uses: actions/checkout@master
+              with:
+                  persist-credentials: false # otherwise, the token used is the GITHUB_TOKEN, instead of your personal token
+                  fetch-depth: 0 # otherwise, you will failed to push refs to dest repo
+            - name: Configure git user and email
+              run: |
+                  git config --local user.name "GitHub Action"
+                  git config --local user.email "action@github.com"
+            - name: Make changes to the repository's contents
+              run: |
+                  mkdir -p "$(dirname "$FILE_PATH")"
+                  echo "$FILE_CONTENTS">"$FILE_PATH"
+            - name: Commit changes
+              run: |
+                  git add "$FILE_PATH"
+                  git commit -m "feat(1_hello-world): add $(basename "$FILE_PATH")"
+            - name: Delete this workflow and commit
+              run: |
+                  git rm ".github/workflows/1_hello-world.yml"
+                  git commit -m "feat(1_hello-world): remove 1_hello-world workflow"
+            - name: Push changes
+              uses: ad-m/github-push-action@master
+              with:
+                  github_token: ${{ secrets.GITHUB_TOKEN }}
+                  branch: ${{ github.ref }}
+
